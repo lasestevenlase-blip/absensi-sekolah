@@ -73,39 +73,33 @@
             const video = document.getElementById("webcam");
             const canvas = document.createElement("canvas");
             
-            // Set ukuran foto sesuai video
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext("2d").drawImage(video, 0, 0);
             
-            // Ambil data gambar (Base64)
             const base64Image = canvas.toDataURL("image/jpeg").split(",")[1];
 
-            // LOGIKA WAKTU
             const sekarang = new Date();
             const jam = sekarang.getHours();
             const menit = sekarang.getMinutes();
             const waktuTeks = jam.toString().padStart(2, '0') + ":" + menit.toString().padStart(2, '0');
             
-            // Cek Status (Tepat Waktu batas 07:00)
             let statusMasuk = (jam < 7 || (jam === 7 && menit === 0)) ? "✅ TEPAT WAKTU" : "⚠️ TERLAMBAT";
             
-            // Cek Status Piket
-            const statusPiket = localStorage.getItem("statusPiket") || "";
-            let teksPiket = (statusPiket.toLowerCase() === "piket") ? "\n📢 JANGAN LUPA: Hari ini Bosku jadwal PIKET!" : "";
+            const statusPiket = localStorage.getItem("statusPiket") || "-";
+            const namaUser = localStorage.getItem("namaUser"); // Pastikan login.html mengisi ini
 
             alert("Sedang Mengirim Absensi... Sabar ya Bosku");
 
             // --- KONEKSI KE GOOGLE SHEETS ---
-            // Ganti URL di bawah ini dengan URL Deployment Bosku nanti
-            const urlDatabase = "https://script.google.com/macros/s/AKfycbwl9RpJBKJdJeY-TZ7BEOzDCG7Xc9YNzGI6tVD4LHM7jewuXq5HQ3q88j0XmLyiAel69w/exec"; 
+            // GANTI URL DI BAWAH INI DENGAN URL WEB APP BOSKU
+            const urlDatabase = "https://script.google.com/macros/s/AKfycbwl9RpJBKJdJeY-TZ7BEOzDCG7Xc9YNzGI6tVD4LHM7jewuXq5HQ3q88j0XmLyiAel69w/exec; 
 
             try {
-                // Proses kirim ke Sheets (Data Nama, Foto, Waktu, Status)
                 const response = await fetch(urlDatabase, {
                     method: 'POST',
                     body: JSON.stringify({
-                        "username": localStorage.getItem("namaUser"),
+                        "username": namaUser,
                         "image": base64Image,
                         "waktu": waktuTeks,
                         "status": statusMasuk,
@@ -116,26 +110,14 @@
                 const res = await response.json();
 
                 if (res.result === "success") {
-                    alert("ABSENSI BERHASIL TERKIRIM!\n" +
-                          "----------------------------\n" +
-                          "Jam Absen: " + waktuTeks + "\n" +
-                          "Status: " + statusMasuk + 
-                          teksPiket);
-                    
+                    alert("ABSENSI BERHASIL TERKIRIM!\n----------------------------\nNama: " + namaUser + "\nJam: " + waktuTeks + "\nStatus: " + statusMasuk);
                     window.location.href = 'dashboard.html';
                 } else {
-                    alert("Gagal Terkirim: Nama tidak dikenali.");
+                    alert("Gagal: " + res.message);
                 }
 
             } catch (error) {
-                // Jika koneksi belum dipasang (URL masih kosong), tampilkan simulasi sukses agar Bosku bisa tes
-                console.log("Error koneksi karena URL belum dipasang");
-                alert("SIMULASI SUKSES (Kabel belum disambung)\n" +
-                      "----------------------------\n" +
-                      "Jam Absen: " + waktuTeks + "\n" +
-                      "Status: " + statusMasuk + 
-                      teksPiket);
-                window.location.href = 'dashboard.html';
+                alert("Koneksi Error: Pastikan URL Apps Script sudah benar dan sudah di-Deploy sebagai 'Anyone'.");
             }
         }
     </script>
