@@ -15,7 +15,6 @@
         #video-container { display: none; margin-top: 20px; }
         video { width: 100%; max-width: 300px; border-radius: 15px; border: 4px solid #e91e63; background: #000; }
         .btn-foto { background: #e91e63; color: white; padding: 15px 35px; border: none; border-radius: 50px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3); }
-        .btn-foto:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
@@ -42,16 +41,23 @@
 
     <script>
         const html5QrCode = new Html5Qrcode("reader");
-        const qrConfig = { fps: 10, qrbox: { width: 250, height: 250 } };
 
-        // 1. MULAI KAMERA SCAN QR
-        html5QrCode.start({ facingMode: "environment" }, qrConfig, (decodedText) => {
-            document.getElementById("hasil-scan").innerText = "Lokasi Terdeteksi!";
-            html5QrCode.stop(); 
-            document.getElementById("qr-section").style.display = "none"; 
-            mulaiSelfie(); 
-        }).catch(err => {
-            alert("Gagal buka kamera: " + err);
+        // 1. MULAI KAMERA SCAN QR (VERSI STABIL)
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            (decodedText) => {
+                document.getElementById("hasil-scan").innerText = "Lokasi Terdeteksi!";
+                // Beri jeda sebentar sebelum pindah ke selfie agar tidak crash
+                setTimeout(() => {
+                    html5QrCode.stop().then(() => {
+                        document.getElementById("qr-section").style.display = "none"; 
+                        mulaiSelfie(); 
+                    });
+                }, 500);
+            }
+        ).catch(err => {
+            alert("Kamera scan tidak muncul? Cek izin kamera di browser Bosku.");
         });
 
         // 2. FUNGSI KAMERA SELFIE
@@ -64,7 +70,7 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 video.srcObject = stream;
             } catch (err) {
-                alert("Gagal buka kamera depan: " + err);
+                alert("Gagal buka kamera selfie: " + err);
             }
         }
 
@@ -72,11 +78,9 @@
         async function ambilFoto() {
             const video = document.getElementById("webcam");
             const canvas = document.createElement("canvas");
-            
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext("2d").drawImage(video, 0, 0);
-            
             const base64Image = canvas.toDataURL("image/jpeg").split(",")[1];
 
             const sekarang = new Date();
@@ -85,15 +89,13 @@
             const waktuTeks = jam.toString().padStart(2, '0') + ":" + menit.toString().padStart(2, '0');
             
             let statusMasuk = (jam < 7 || (jam === 7 && menit === 0)) ? "✅ TEPAT WAKTU" : "⚠️ TERLAMBAT";
-            
+            const namaUser = localStorage.getItem("namaUser") || "Guru Tanpa Nama";
             const statusPiket = localStorage.getItem("statusPiket") || "-";
-            const namaUser = localStorage.getItem("namaUser"); // Pastikan login.html mengisi ini
 
-            alert("Sedang Mengirim Absensi... Sabar ya Bosku");
+            alert("Sedang Mengirim ke Google Sheets... Sabar ya Bosku");
 
-            // --- KONEKSI KE GOOGLE SHEETS ---
-            // GANTI URL DI BAWAH INI DENGAN URL WEB APP BOSKU
-            const urlDatabase = "https://script.google.com/macros/s/AKfycbwl9RpJBKJdJeY-TZ7BEOzDCG7Xc9YNzGI6tVD4LHM7jewuXq5HQ3q88j0XmLyiAel69w/exec; 
+            // URL WEB APP BOSKU
+            const urlDatabase = "https://script.google.com/macros/s/AKfycbwl9RpJBKJdJeY-TZ7BEOzDCG7Xc9YNzGI6tVD4LHM7jewuXq5HQ3q88j0XmLyiAel69w/exec"; 
 
             try {
                 const response = await fetch(urlDatabase, {
@@ -108,16 +110,14 @@
                 });
                 
                 const res = await response.json();
-
                 if (res.result === "success") {
-                    alert("ABSENSI BERHASIL TERKIRIM!\n----------------------------\nNama: " + namaUser + "\nJam: " + waktuTeks + "\nStatus: " + statusMasuk);
+                    alert("ABSENSI BERHASIL!\nNama: " + namaUser + "\nJam: " + waktuTeks);
                     window.location.href = 'dashboard.html';
                 } else {
                     alert("Gagal: " + res.message);
                 }
-
             } catch (error) {
-                alert("Koneksi Error: Pastikan URL Apps Script sudah benar dan sudah di-Deploy sebagai 'Anyone'.");
+                alert("Koneksi gagal. Cek sinyal atau Deploy ulang Apps Script Bosku.");
             }
         }
     </script>
