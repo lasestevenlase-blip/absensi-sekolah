@@ -21,7 +21,7 @@
     <div id="qr-section">
         <div class="header">TAHAP 1: SCAN QR SEKOLAH</div>
         <div class="container">
-            <p>Silakan Scan QR Code Sekolah</p>
+            <p>Silakan Scan QR Code yang ada di Sekolah</p>
             <div id="reader"></div>
         </div>
     </div>
@@ -40,12 +40,12 @@
         const html5QrCode = new Html5Qrcode("reader");
         let koordinatGPS = "Mencari...";
 
-        // Ambil GPS Otomatis
+        // Ambil GPS Otomatis saat halaman dibuka
         navigator.geolocation.getCurrentPosition((pos) => {
             koordinatGPS = pos.coords.latitude + ", " + pos.coords.longitude;
-        }, (err) => { koordinatGPS = "GPS Matikan"; });
+        }, (err) => { koordinatGPS = "GPS Tidak Aktif"; });
 
-        // 1. SCAN QR
+        // 1. Logika Scan QR
         html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
             html5QrCode.stop().then(() => {
                 document.getElementById("qr-section").style.display = "none";
@@ -53,45 +53,38 @@
             });
         });
 
+        // 2. Logika Kamera Selfie & Info Guru
         function tampilkanSelfie() {
             document.getElementById("video-container").style.display = "block";
             const video = document.getElementById("webcam");
             
             const nama = localStorage.getItem("namaUser") || "Guru";
-            const piket = localStorage.getItem("statusPiket") || "-";
             const skrg = new Date();
             const jam = skrg.getHours();
             const min = skrg.getMinutes();
             const jamTeks = jam.toString().padStart(2, '0') + ":" + min.toString().padStart(2, '0');
             
-            // LOGIKA JAM 07.00
+            // Batas Jam 07:00
             let status = (jam < 7 || (jam === 7 && min === 0)) ? "TEPAT WAKTU" : "TERLAMBAT";
-            let teksPiket = (piket.toLowerCase().includes("piket") || piket.toLowerCase() === "sabtu") ? "📢 JADWAL PIKET HARI INI" : "Bukan Jadwal Piket";
 
             document.getElementById("info-guru").innerHTML = `
                 <b>Nama:</b> ${nama}<br>
-                <b>Jam:</b> ${jamTeks}<br>
-                <b>Status:</b> ${status}<br>
-                <b>Piket:</b> ${teksPiket}
+                <b>Jam Scan:</b> ${jamTeks}<br>
+                <b>Status:</b> ${status}
             `;
 
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => video.srcObject = s);
         }
 
+        // 3. Logika Kirim Data ke Google Sheet
         async function ambilFoto() {
-            const video = document.getElementById("webcam");
-            const canvas = document.createElement("canvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext("2d").drawImage(video, 0, 0);
-            
             const infoText = document.getElementById("info-guru").innerText;
             const jamTeks = infoText.split('\n')[1].split(': ')[1];
             const statusTeks = infoText.split('\n')[2].split(': ')[1];
 
             alert("Sedang Mengirim... Sabar ya Bosku");
 
-            // --- TEMPEL URL EXEC DI SINI ---
+            // --- JANGAN LUPA TEMPEL LINK EXEC BOSKU DI BAWAH INI ---
             const url = "https://script.google.com/macros/s/AKfycbwPSS-__v3hVLKS0W7tGK7IfRaS2zPkTXP9aQov2peSdbsmBo_SjXmU8B6zJctcD2Rrxw/exec";
 
             try {
@@ -101,15 +94,14 @@
                         "username": localStorage.getItem("namaUser"),
                         "waktu": jamTeks,
                         "status": statusTeks,
-                        "piket": localStorage.getItem("statusPiket"),
                         "latlong": koordinatGPS
                     })
                 });
                 
-                alert("BERHASIL! Data & Angka 1 Masuk ke Sheet.");
+                alert("BERHASIL! Data mendarat di Sheets dan Angka 1 sudah masuk.");
                 window.location.href = 'dashboard.html';
             } catch (e) { 
-                alert("Gagal kirim! Cek link atau internet."); 
+                alert("Gagal kirim! Pastikan Link Apps Script Benar."); 
             }
         }
     </script>
