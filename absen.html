@@ -40,12 +40,10 @@
         const html5QrCode = new Html5Qrcode("reader");
         let koordinatGPS = "Mencari...";
 
-        // Ambil GPS Otomatis saat halaman dibuka
         navigator.geolocation.getCurrentPosition((pos) => {
             koordinatGPS = pos.coords.latitude + ", " + pos.coords.longitude;
         }, (err) => { koordinatGPS = "GPS Tidak Aktif"; });
 
-        // 1. Logika Scan QR
         html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
             html5QrCode.stop().then(() => {
                 document.getElementById("qr-section").style.display = "none";
@@ -53,30 +51,22 @@
             });
         });
 
-        // 2. Logika Kamera Selfie & Info Guru
         function tampilkanSelfie() {
             document.getElementById("video-container").style.display = "block";
             const video = document.getElementById("webcam");
-            
             const nama = localStorage.getItem("namaUser") || "Guru";
             const skrg = new Date();
-            const jam = skrg.getHours();
-            const min = skrg.getMinutes();
-            const jamTeks = jam.toString().padStart(2, '0') + ":" + min.toString().padStart(2, '0');
-            
-            // Batas Jam 07:00
-            let status = (jam < 7 || (jam === 7 && min === 0)) ? "TEPAT WAKTU" : "TERLAMBAT";
+            const jamTeks = skrg.getHours().toString().padStart(2, '0') + ":" + skrg.getMinutes().toString().padStart(2, '0');
+            let status = (skrg.getHours() < 7 || (skrg.getHours() === 7 && skrg.getMinutes() === 0)) ? "TEPAT WAKTU" : "TERLAMBAT";
 
             document.getElementById("info-guru").innerHTML = `
                 <b>Nama:</b> ${nama}<br>
                 <b>Jam Scan:</b> ${jamTeks}<br>
                 <b>Status:</b> ${status}
             `;
-
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => video.srcObject = s);
         }
 
-        // 3. Logika Kirim Data ke Google Sheet
         async function ambilFoto() {
             const infoText = document.getElementById("info-guru").innerText;
             const jamTeks = infoText.split('\n')[1].split(': ')[1];
@@ -84,12 +74,13 @@
 
             alert("Sedang Mengirim... Sabar ya Bosku");
 
-            // --- JANGAN LUPA TEMPEL LINK EXEC BOSKU DI BAWAH INI ---
+            // --- TEMPEL URL EXEC DARI DEPLOYMENT BARU DI SINI ---
             const url = "https://script.google.com/macros/s/AKfycbwPSS-__v3hVLKS0W7tGK7IfRaS2zPkTXP9aQov2peSdbsmBo_SjXmU8B6zJctcD2Rrxw/exec";
 
             try {
                 await fetch(url, {
                     method: 'POST',
+                    mode: 'no-cors', // Penting untuk menghindari error CORS saat ngetes
                     body: JSON.stringify({
                         "username": localStorage.getItem("namaUser"),
                         "waktu": jamTeks,
@@ -98,10 +89,10 @@
                     })
                 });
                 
-                alert("BERHASIL! Data mendarat di Sheets dan Angka 1 sudah masuk.");
+                alert("BERHASIL! Data sudah dikirim. Cek Sheet ABSEN SENIN-RABU Bosku.");
                 window.location.href = 'dashboard.html';
             } catch (e) { 
-                alert("Gagal kirim! Pastikan Link Apps Script Benar."); 
+                alert("Gagal kirim! Cek Link Apps Script."); 
             }
         }
     </script>
