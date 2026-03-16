@@ -1,119 +1,74 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi SD BHOANAWA 1</title>
+    <title>Absensi Kamera & GPS</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; background: #f0f2f5; text-align: center; }
-        .header { background: #e91e63; color: white; padding: 20px; font-weight: bold; font-size: 18px; }
-        .container { padding: 20px; }
-        #reader { width: 100%; max-width: 400px; margin: auto; border-radius: 15px; overflow: hidden; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        #video-container { display: none; margin-top: 20px; }
-        video { width: 100%; max-width: 300px; border-radius: 15px; border: 4px solid #4caf50; background: #000; }
-        .btn-foto { background: #4caf50; color: white; padding: 15px 35px; border: none; border-radius: 50px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
-        .info-box { background: white; padding: 15px; border-radius: 10px; margin: 10px auto; max-width: 400px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #e91e63; }
+        body { font-family: sans-serif; text-align: center; background: #f4f4f4; }
+        #reader, #webcam { width: 100%; max-width: 400px; margin: auto; border-radius: 10px; }
+        .info { background: white; padding: 15px; margin: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn { background: #4caf50; color: white; padding: 15px; border: none; border-radius: 5px; width: 80%; font-weight: bold; }
     </style>
 </head>
 <body>
-
-    <div id="qr-section">
-        <div class="header">TAHAP 1: SCAN QR SEKOLAH</div>
-        <div class="container">
-            <p>Silakan Scan QR Code Sekolah</p>
-            <div id="reader"></div>
-        </div>
+    <div id="step-scan">
+        <h3>TAHAP 1: SCAN QR</h3>
+        <div id="reader"></div>
     </div>
 
-    <div id="video-container">
-        <div class="header" style="background: #4caf50;">TAHAP 2: FOTO SELFIE</div>
-        <div class="container">
-            <div class="info-box" id="info-guru"></div>
-            
-            <video id="webcam" autoplay playsinline></video>
-            <br>
-            <button class="btn-foto" onclick="ambilFoto()">AMBIL FOTO & KIRIM</button>
-        </div>
+    <div id="step-selfie" style="display:none;">
+        <h3>TAHAP 2: FOTO SELFIE</h3>
+        <div class="info" id="detail-guru"></div>
+        <video id="webcam" autoplay playsinline></video>
+        <button class="btn" onclick="kirimData()">AMBIL FOTO & KIRIM</button>
     </div>
 
     <script>
-        const html5QrCode = new Html5Qrcode("reader");
-        let koordinatGPS = "Mencari...";
-
-        // Ambil GPS Otomatis
-        navigator.geolocation.getCurrentPosition((pos) => {
-            koordinatGPS = pos.coords.latitude + ", " + pos.coords.longitude;
-        }, (err) => { koordinatGPS = "GPS Matikan"; });
-
-        // 1. SCAN QR (Pakai cara yang Bosku bilang BERHASIL tadi)
-        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
-            html5QrCode.stop().then(() => {
-                document.getElementById("qr-section").style.display = "none";
-                tampilkanSelfie();
-            });
+        let gpsData = "Mencari GPS...";
+        navigator.geolocation.getCurrentPosition(p => { 
+            gpsData = p.coords.latitude + "," + p.coords.longitude; 
         });
 
-        function tampilkanSelfie() {
-            document.getElementById("video-container").style.display = "block";
-            const video = document.getElementById("webcam");
-            
-            const nama = localStorage.getItem("namaUser") || "Guru";
-            const piket = localStorage.getItem("statusPiket") || "-";
+        const scanner = new Html5Qrcode("reader");
+        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, () => {
+            scanner.stop();
+            document.getElementById('step-scan').style.display = 'none';
+            mulaiKamera();
+        });
+
+        function mulaiKamera() {
+            document.getElementById('step-selfie').style.display = 'block';
+            const video = document.getElementById('webcam');
+            const nama = localStorage.getItem("namaUser");
             const skrg = new Date();
-            const jam = skrg.getHours();
-            const min = skrg.getMinutes();
-            const jamTeks = jam.toString().padStart(2, '0') + ":" + min.toString().padStart(2, '0');
+            const jamTeks = skrg.getHours().toString().padStart(2,'0') + ":" + skrg.getMinutes().toString().padStart(2,'0');
+            const status = (skrg.getHours() < 7 || (skrg.getHours() === 7 && skrg.getMinutes() === 0)) ? "TEPAT WAKTU" : "TERLAMBAT";
             
-            // LOGIKA JAM 07.00 PAS
-            let status = (jam < 7 || (jam === 7 && min === 0)) ? "✅ TEPAT WAKTU" : "⚠️ TERLAMBAT";
-            let teksPiket = (piket.toLowerCase().includes("piket") || piket.toLowerCase() === "sabtu") ? "📢 HARI INI JADWAL PIKET" : "Bukan Jadwal Piket";
-
-            // Munculkan di layar HP
-            document.getElementById("info-guru").innerHTML = `
-                <b>Nama:</b> ${nama}<br>
-                <b>Jam:</b> ${jamTeks}<br>
-                <b>Status:</b> ${status}<br>
-                <b>Piket:</b> ${teksPiket}
-            `;
-
+            document.getElementById('detail-guru').innerHTML = `Nama: ${nama}<br>Jam: ${jamTeks}<br>Status: ${status}`;
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => video.srcObject = s);
         }
 
-        async function ambilFoto() {
-            const video = document.getElementById("webcam");
+        async function kirimData() {
+            const video = document.getElementById('webcam');
             const canvas = document.createElement("canvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
             canvas.getContext("2d").drawImage(video, 0, 0);
-            const imgBase64 = canvas.toDataURL("image/jpeg").split(",")[1];
-
-            const skrg = new Date();
-            const jam = skrg.getHours();
-            const min = skrg.getMinutes();
-            const jamTeks = jam.toString().padStart(2, '0') + ":" + min.toString().padStart(2, '0');
-            let statusTeks = (jam < 7 || (jam === 7 && min === 0)) ? "TEPAT WAKTU" : "TERLAMBAT";
-
-            alert("Sedang Mengirim... Sabar Bosku");
-
-            // URL WEB APP MILIK BOSKU
-            const url = "https://script.google.com/macros/s/AKfycbw19RpJBKJdJeY-TZ78EOzDCG7XcY9NzGi6TVD4LHM7jewuXq5HQ3q88j0XmLYiAeL69w/exec";
-
-            try {
-                await fetch(url, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        "username": localStorage.getItem("namaUser"),
-                        "waktu": jamTeks,
-                        "status": statusTeks,
-                        "piket": localStorage.getItem("statusPiket"),
-                        "latlong": koordinatGPS,
-                        "image": imgBase64
-                    })
-                });
-                alert("BERHASIL! Data Masuk ke Kolom J (Hadir) dan L (GPS)");
-                window.location.href = 'dashboard.html';
-            } catch (e) { alert("Gagal kirim!"); }
+            
+            alert("Sabar Bosku, Sedang Mengirim...");
+            
+            const url = "URL_WEB_APP_BOSKU"; // GANTI DENGAN URL APPS SCRIPT
+            await fetch(url, {
+                method: 'POST',
+                body: JSON.stringify({
+                    "username": localStorage.getItem("namaUser"),
+                    "waktu": document.getElementById('detail-guru').innerText.split('\n')[1].split(': ')[1],
+                    "status": document.getElementById('detail-guru').innerText.split('\n')[2].split(': ')[1],
+                    "latlong": gpsData
+                })
+            });
+            alert("Berhasil! Angka 1 sudah masuk di Kolom H.");
+            window.location.href = 'dashboard.html';
         }
     </script>
 </body>
