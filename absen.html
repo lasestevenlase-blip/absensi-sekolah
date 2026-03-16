@@ -64,7 +64,7 @@
             const min = skrg.getMinutes();
             const jamTeks = jam.toString().padStart(2, '0') + ":" + min.toString().padStart(2, '0');
             
-            // LOGIKA JAM 07.00 (Sesuai permintaan Bosku)
+            // LOGIKA JAM 07.00
             let status = (jam < 7 || (jam === 7 && min === 0)) ? "TEPAT WAKTU" : "TERLAMBAT";
             let teksPiket = (piket.toLowerCase().includes("piket") || piket.toLowerCase() === "sabtu") ? "📢 JADWAL PIKET HARI INI" : "Bukan Jadwal Piket";
 
@@ -85,18 +85,17 @@
             canvas.height = video.videoHeight;
             canvas.getContext("2d").drawImage(video, 0, 0);
             
-            // Ambil data jam dan status dari layar
             const infoText = document.getElementById("info-guru").innerText;
             const jamTeks = infoText.split('\n')[1].split(': ')[1];
             const statusTeks = infoText.split('\n')[2].split(': ')[1];
 
             alert("Sedang Mengirim... Sabar ya Bosku");
 
-            // --- PENTING: GANTI DENGAN URL /exec MILIK BOSKU ---
-            const url = "https://script.google.com/macros/s/AKfycbxPJ-prljp6HjMGoIKaYMSpGpIaPPaLv49My-Ff3zabJTG6hlyuOoLw2ero4kgP7tozfg/exec";
+            // --- TEMPEL URL EXEC DI SINI ---
+            const url = "https://script.google.com/macros/s/AKfycbwPSS-__v3hVLKS0W7tGK7IfRaS2zPkTXP9aQov2peSdbsmBo_SjXmU8B6zJctcD2Rrxw/exec";
 
             try {
-                const response = await fetch(url, {
+                await fetch(url, {
                     method: 'POST',
                     body: JSON.stringify({
                         "username": localStorage.getItem("namaUser"),
@@ -110,7 +109,7 @@
                 alert("BERHASIL! Data & Angka 1 Masuk ke Sheet.");
                 window.location.href = 'dashboard.html';
             } catch (e) { 
-                alert("Gagal kirim! Cek URL Apps Script atau Internet."); 
+                alert("Gagal kirim! Cek link atau internet."); 
             }
         }
     </script>
