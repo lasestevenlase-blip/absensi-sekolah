@@ -3,47 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi SD BHOANAWA 1</title>
+    <title>Absensi Digital - SD BHOANAWA 1</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; background: #f0f2f5; text-align: center; }
-        .header { background: #e91e63; color: white; padding: 20px; font-weight: bold; font-size: 18px; }
-        .container { padding: 20px; }
-        #reader { width: 100%; max-width: 400px; margin: auto; border-radius: 15px; overflow: hidden; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        #video-container { display: none; margin-top: 20px; }
-        video { width: 100%; max-width: 300px; border-radius: 15px; border: 4px solid #4caf50; background: #000; }
-        .btn-foto { background: #4caf50; color: white; padding: 15px 35px; border: none; border-radius: 50px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; }
-        .info-box { background: white; padding: 15px; border-radius: 10px; margin: 10px auto; max-width: 400px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #e91e63; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f4f7f6; text-align: center; }
+        .header { background: #d81b60; color: white; padding: 25px; font-weight: bold; font-size: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { padding: 20px; max-width: 500px; margin: auto; }
+        #reader { width: 100%; border-radius: 15px; overflow: hidden; background: white; border: 2px solid #ddd; }
+        #video-container { display: none; margin-top: 10px; }
+        video { width: 100%; border-radius: 15px; border: 5px solid #4caf50; background: #000; }
+        .btn-foto { background: #4caf50; color: white; padding: 18px 40px; border: none; border-radius: 50px; font-weight: bold; font-size: 18px; margin-top: 20px; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(76,175,80,0.3); }
+        .info-box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: left; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 6px solid #d81b60; }
+        .loading { display: none; color: #d81b60; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div id="qr-section">
-        <div class="header">TAHAP 1: SCAN QR SEKOLAH</div>
+        <div class="header">LANGKAH 1: SCAN QR SEKOLAH</div>
         <div class="container">
-            <p>Silakan Scan QR Code yang ada di Sekolah</p>
             <div id="reader"></div>
+            <p style="color: #666;">Arahkan kamera ke QR Code Sekolah</p>
         </div>
     </div>
 
     <div id="video-container">
-        <div class="header" style="background: #4caf50;">TAHAP 2: FOTO SELFIE</div>
+        <div class="header" style="background: #4caf50;">LANGKAH 2: FOTO SELFIE</div>
         <div class="container">
             <div class="info-box" id="info-guru"></div>
             <video id="webcam" autoplay playsinline></video>
-            <br>
-            <button class="btn-foto" onclick="ambilFoto()">AMBIL FOTO & KIRIM</button>
+            <div id="loader" class="loading">Sabar Bosku, Sedang Mengirim Data...</div>
+            <button id="btnKirim" class="btn-foto" onclick="ambilFoto()">AMBIL FOTO & KIRIM</button>
         </div>
     </div>
 
     <script>
         const html5QrCode = new Html5Qrcode("reader");
-        let koordinatGPS = "Mencari...";
+        let koordinatGPS = "Mencari GPS...";
 
+        // Ambil Lokasi Otomatis
         navigator.geolocation.getCurrentPosition((pos) => {
             koordinatGPS = pos.coords.latitude + ", " + pos.coords.longitude;
-        }, (err) => { koordinatGPS = "GPS Tidak Aktif"; });
+        }, (err) => { koordinatGPS = "GPS Dimatikan"; });
 
+        // Mulai Scan QR
         html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
             html5QrCode.stop().then(() => {
                 document.getElementById("qr-section").style.display = "none";
@@ -54,9 +57,12 @@
         function tampilkanSelfie() {
             document.getElementById("video-container").style.display = "block";
             const video = document.getElementById("webcam");
-            const nama = localStorage.getItem("namaUser") || "Guru";
+            
+            // MENGAMBIL NAMA DARI LOCALSTORAGE (DARI HALAMAN LOGIN/DAFTAR)
+            const nama = localStorage.getItem("namaUser") || "Guru Tidak Dikenal";
             const skrg = new Date();
             const jamTeks = skrg.getHours().toString().padStart(2, '0') + ":" + skrg.getMinutes().toString().padStart(2, '0');
+            
             let status = (skrg.getHours() < 7 || (skrg.getHours() === 7 && skrg.getMinutes() === 0)) ? "TEPAT WAKTU" : "TERLAMBAT";
 
             document.getElementById("info-guru").innerHTML = `
@@ -64,35 +70,44 @@
                 <b>Jam Scan:</b> ${jamTeks}<br>
                 <b>Status:</b> ${status}
             `;
+
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => video.srcObject = s);
         }
 
         async function ambilFoto() {
+            const btn = document.getElementById("btnKirim");
+            const loader = document.getElementById("loader");
             const infoText = document.getElementById("info-guru").innerText;
             const jamTeks = infoText.split('\n')[1].split(': ')[1];
             const statusTeks = infoText.split('\n')[2].split(': ')[1];
+            const namaGuru = localStorage.getItem("namaUser");
 
-            alert("Sedang Mengirim... Sabar ya Bosku");
-
-            // --- TEMPEL URL EXEC DARI DEPLOYMENT BARU DI SINI ---
+            // --- TEMPEL LINK EXEC DARI APPS SCRIPT BOSKU DI SINI ---
             const url = "https://script.google.com/macros/s/AKfycbwPSS-__v3hVLKS0W7tGK7IfRaS2zPkTXP9aQov2peSdbsmBo_SjXmU8B6zJctcD2Rrxw/exec";
+
+            btn.disabled = true;
+            btn.style.background = "#ccc";
+            loader.style.display = "block";
 
             try {
                 await fetch(url, {
                     method: 'POST',
-                    mode: 'no-cors', // Penting untuk menghindari error CORS saat ngetes
+                    mode: 'no-cors',
                     body: JSON.stringify({
-                        "username": localStorage.getItem("namaUser"),
+                        "username": namaGuru,
                         "waktu": jamTeks,
                         "status": statusTeks,
                         "latlong": koordinatGPS
                     })
                 });
                 
-                alert("BERHASIL! Data sudah dikirim. Cek Sheet ABSEN SENIN-RABU Bosku.");
+                alert("MANTAP BOSKU! Data " + namaGuru + " Berhasil Masuk.");
                 window.location.href = 'dashboard.html';
             } catch (e) { 
-                alert("Gagal kirim! Cek Link Apps Script."); 
+                alert("Waduh Gagal! Cek Sinyal atau Link Apps Script Bosku.");
+                btn.disabled = false;
+                btn.style.background = "#4caf50";
+                loader.style.display = "none";
             }
         }
     </script>
