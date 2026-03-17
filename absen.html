@@ -40,6 +40,8 @@
     <script>
         const html5QrCode = new Html5Qrcode("reader");
         let koordinatGPS = "Mencari GPS...";
+        let globalStatus = "";
+        let globalJam = "";
 
         // Ambil Lokasi Otomatis
         navigator.geolocation.getCurrentPosition((pos) => {
@@ -58,17 +60,15 @@
             document.getElementById("video-container").style.display = "block";
             const video = document.getElementById("webcam");
             
-            // MENGAMBIL NAMA DARI LOCALSTORAGE (DARI HALAMAN LOGIN/DAFTAR)
             const nama = localStorage.getItem("namaUser") || "Guru Tidak Dikenal";
             const skrg = new Date();
-            const jamTeks = skrg.getHours().toString().padStart(2, '0') + ":" + skrg.getMinutes().toString().padStart(2, '0');
-            
-            let status = (skrg.getHours() < 7 || (skrg.getHours() === 7 && skrg.getMinutes() === 0)) ? "TEPAT WAKTU" : "TERLAMBAT";
+            globalJam = skrg.getHours().toString().padStart(2, '0') + ":" + skrg.getMinutes().toString().padStart(2, '0');
+            globalStatus = (skrg.getHours() < 7 || (skrg.getHours() === 7 && skrg.getMinutes() === 15)) ? "TEPAT WAKTU" : "TERLAMBAT";
 
             document.getElementById("info-guru").innerHTML = `
                 <b>Nama:</b> ${nama}<br>
-                <b>Jam Scan:</b> ${jamTeks}<br>
-                <b>Status:</b> ${status}
+                <b>Jam Scan:</b> ${globalJam}<br>
+                <b>Status:</b> ${globalStatus}
             `;
 
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => video.srcObject = s);
@@ -77,12 +77,9 @@
         async function ambilFoto() {
             const btn = document.getElementById("btnKirim");
             const loader = document.getElementById("loader");
-            const infoText = document.getElementById("info-guru").innerText;
-            const jamTeks = infoText.split('\n')[1].split(': ')[1];
-            const statusTeks = infoText.split('\n')[2].split(': ')[1];
             const namaGuru = localStorage.getItem("namaUser");
 
-            // --- TEMPEL LINK EXEC DARI APPS SCRIPT BOSKU DI SINI ---
+            // --- LINK APPS SCRIPT BOSKU (Pastikan ini Link Deployment Terbaru) ---
             const url = "https://script.google.com/macros/s/AKfycbwPSS-__v3hVLKS0W7tGK7IfRaS2zPkTXP9aQov2peSdbsmBo_SjXmU8B6zJctcD2Rrxw/exec";
 
             btn.disabled = true;
@@ -95,8 +92,8 @@
                     mode: 'no-cors',
                     body: JSON.stringify({
                         "username": namaGuru,
-                        "waktu": jamTeks,
-                        "status": statusTeks,
+                        "waktu": globalJam,
+                        "status": globalStatus,
                         "latlong": koordinatGPS
                     })
                 });
@@ -104,7 +101,7 @@
                 alert("MANTAP BOSKU! Data " + namaGuru + " Berhasil Masuk.");
                 window.location.href = 'dashboard.html';
             } catch (e) { 
-                alert("Waduh Gagal! Cek Sinyal atau Link Apps Script Bosku.");
+                alert("Gagal Kirim! Cek Sinyal Bosku.");
                 btn.disabled = false;
                 btn.style.background = "#4caf50";
                 loader.style.display = "none";
