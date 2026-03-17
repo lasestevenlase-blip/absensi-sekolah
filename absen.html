@@ -1,63 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absen Selfie</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        body { font-family: sans-serif; text-align: center; background: #f0f0f0; margin: 0; }
-        .header { background: #d81b60; color: white; padding: 20px; font-weight: bold; }
-        #reader { width: 100%; max-width: 400px; margin: auto; }
-        #webcam { width: 90%; border-radius: 15px; border: 4px solid #4caf50; display: none; margin: 10px auto; }
-        .info { background: white; margin: 15px; padding: 15px; border-radius: 10px; text-align: left; display: none; }
-        .btn { background: #4caf50; color: white; padding: 15px; border: none; border-radius: 10px; width: 80%; font-weight: bold; display: none; margin: 10px auto; }
-    </style>
-</head>
-<body>
-    <div id="scandiv">
-        <div class="header">SCAN QR SEKOLAH</div>
-        <div id="reader"></div>
-    </div>
-    <div id="selfiediv">
-        <div class="header" style="background:#4caf50">AMBIL FOTO SELFIE</div>
-        <div class="info" id="box"></div>
-        <video id="webcam" autoplay playsinline></video>
-        <button class="btn" id="btnK" onclick="kirim()">KIRIM DATA</button>
-    </div>
-
-    <script>
-        const scanner = new Html5Qrcode("reader");
-        let gps = ""; let jm = ""; let st = "";
-        navigator.geolocation.getCurrentPosition(p => gps = p.coords.latitude + "," + p.coords.longitude);
-
-        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, () => {
-            scanner.stop();
-            document.getElementById("scandiv").style.display = "none";
-            document.getElementById("selfiediv").style.display = "block";
-            tampil();
-        });
-
-        function tampil() {
-            const n = localStorage.getItem("namaUser");
-            const p = localStorage.getItem("piketUser") || "-";
-            const d = new Date();
-            jm = d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
-            st = (d.getHours() < 7 || (d.getHours() == 7 && d.getMinutes() <= 15)) ? "TEPAT WAKTU" : "TERLAMBAT";
-            
-            document.getElementById("box").style.display = "block";
-            document.getElementById("webcam").style.display = "block";
-            document.getElementById("btnK").style.display = "block";
-            document.getElementById("box").innerHTML = `<b>Nama:</b> ${n}<br><b>Status:</b> ${st}<br><b>Piket:</b> ${p}`;
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => document.getElementById("webcam").srcObject = s);
-        }
-
-        async function kirim() {
-            // --- GANTI DENGAN URL APPS SCRIPT BARU BOSKU ---
-            const url = "URL_BARU_DARI_DEPLOY_TADI"; 
-            document.getElementById("btnK").innerText = "MENGIRIM...";
-            await fetch(url, { method: 'POST', body: JSON.stringify({ "username": localStorage.getItem("namaUser"), "waktu": jm, "status": st, "latlong": gps }) });
-            alert("Absen Berhasil!"); window.location.href = "dashboard.html";
-        }
-    </script>
-</body>
-</html>
+<script>
+    // ... di dalam fungsi tampilkan info guru ...
+    function tampilkanInfo() {
+        const nama = localStorage.getItem("namaUser");
+        const piket = localStorage.getItem("piketUser") || "-";
+        // Tampilkan di layar
+        document.getElementById("info").innerHTML = "Nama: " + nama + "<br>Piket: " + piket;
+    }
+</script>
