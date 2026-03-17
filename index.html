@@ -3,72 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - SD INPRES BHOANAWA 1</title>
+    <title>Login Presensi - SD BHOANAWA 1</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #d81b60, #ad1457); height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; }
-        .login-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); width: 100%; max-width: 350px; text-align: center; }
-        img { width: 100px; margin-bottom: 20px; }
-        h2 { color: #880e4f; margin-bottom: 30px; font-size: 1.5rem; }
-        input { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box; transition: 0.3s; }
-        input:focus { border-color: #d81b60; outline: none; }
-        button { width: 100%; padding: 15px; background: #d81b60; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #ad1457; }
-        #msg { margin-top: 15px; color: red; font-size: 0.9rem; font-weight: bold; }
+        body { font-family: sans-serif; background: linear-gradient(135deg, #d81b60, #b71c1c); height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 320px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #d81b60; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        #msg { color: red; font-size: 12px; margin-top: 10px; }
     </style>
 </head>
 <body>
-
-<div class="login-card">
-    <img src="logo.jpg" alt="Logo">
-    <h2>Presensi Guru</h2>
-    <input type="text" id="user" placeholder="Nama Lengkap atau NIP">
-    <input type="password" id="pass" placeholder="Password">
-    <button id="btnLogin" onclick="prosesLogin()">LOGIN</button>
-    <div id="msg"></div>
-</div>
-
-<script>
-async function prosesLogin() {
-    const user = document.getElementById("user").value;
-    const pass = document.getElementById("pass").value;
-    const btn = document.getElementById("btnLogin");
-    const msg = document.getElementById("msg");
-
-    // --- PASTI KAN URL INI ADALAH URL APPS SCRIPT LOGIN BOSKU ---
-    const scriptURL = "https://script.google.com/macros/s/AKfycbwPSS-__v3hVLKS0W7tGK7IfRaS2zPkTXP9aQov2peSdbsmBo_SjXmU8B6zJctcD2Rrxw/exec";
-
-    if (!user || !pass) {
-        msg.innerText = "Isi dulu Bosku!";
-        return;
-    }
-
-    btn.innerText = "MENCOCOKKAN...";
-    btn.disabled = true;
-
-    try {
-        const response = await fetch(scriptURL, {
-            method: 'POST',
-            body: JSON.stringify({ "username": user, "password": pass })
-        });
-        
-        const data = await response.json();
-
-        if (data.result === "success") {
-            // Simpan nama asli dari Sheets ke memori HP
-            localStorage.setItem("namaUser", data.nama);
-            window.location.href = "dashboard.html";
-        } else {
-            msg.innerText = "Wah, Username atau Password Salah!";
-            btn.innerText = "LOGIN";
-            btn.disabled = false;
+    <div class="card">
+        <img src="logo.jpg" style="width: 80px; margin-bottom: 10px;">
+        <h3>LOGIN GURU</h3>
+        <input type="text" id="user" placeholder="Nama Lengkap / NIP">
+        <input type="password" id="pass" placeholder="Password">
+        <button onclick="login()">MASUK</button>
+        <div id="msg"></div>
+    </div>
+    <script>
+        async function login() {
+            const user = document.getElementById("user").value;
+            const pass = document.getElementById("pass").value;
+            // LINK APPS SCRIPT BOSKU
+            const url = "https://script.google.com/macros/s/AKfycbyjQizsansKzbRWvHo1VzF0PZw-nDKqLU8clL0HrwVHV-GCi14oLIymwWQieaIL1S_i2g/exec";
+            
+            try {
+                const res = await fetch(url, { method: 'POST', body: JSON.stringify({ "username": user, "password": pass }) });
+                const data = await res.json();
+                if (data.result === "success") {
+                    localStorage.setItem("namaUser", data.nama);
+                    localStorage.setItem("piketUser", data.piket);
+                    window.location.href = "dashboard.html";
+                } else { document.getElementById("msg").innerText = "Salah Bosku, Cek Lagi!"; }
+            } catch (e) { document.getElementById("msg").innerText = "Koneksi Error!"; }
         }
-    } catch (e) {
-        msg.innerText = "Koneksi Bermasalah!";
-        btn.innerText = "LOGIN";
-        btn.disabled = false;
-    }
-}
-</script>
-
+    </script>
 </body>
 </html>
