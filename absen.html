@@ -25,26 +25,52 @@
         const scanner = new Html5Qrcode("reader");
         let gps = "", jam = "", st = "";
         navigator.geolocation.getCurrentPosition(p => gps = p.coords.latitude + "," + p.coords.longitude);
+        
         scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, () => {
-            scanner.stop(); document.getElementById("s1").style.display = "none"; tampil();
+            scanner.stop(); 
+            document.getElementById("s1").style.display = "none"; 
+            tampil();
         });
+
         function tampil() {
             const nm = localStorage.getItem("namaUser");
             const pk = localStorage.getItem("piketUser") || "-";
             const d = new Date();
             jam = d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
             st = (d.getHours() < 7 || (d.getHours() == 7 && d.getMinutes() <= 15)) ? "TEPAT WAKTU" : "TERLAMBAT";
+            
             document.getElementById("box").style.display = "block";
             document.getElementById("webcam").style.display = "block";
             document.getElementById("btn").style.display = "block";
             document.getElementById("box").innerHTML = `<b>Nama:</b> ${nm}<br><b>Status:</b> ${st}<br><b>Piket:</b> ${pk}`;
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => document.getElementById("webcam").srcObject = s);
         }
+
         async function kirim() {
-            const url = "PASTE_URL_APPS_SCRIPT_BARU_BOSKU_DI_SINI";
+            // URL SUDAH SAYA MASUKKAN DI BAWAH INI BOSKU:
+            const url = "https://script.google.com/macros/s/AKfycbyjQizsansKzbRWvHo1VzF0PZw-nDKqLU8clL0HrwVHV-GCi14oLIymwWQieaIL1S_i2g/exec";
+            
             document.getElementById("btn").innerText = "MENGIRIM...";
-            await fetch(url, { method: 'POST', body: JSON.stringify({ "username": localStorage.getItem("namaUser"), "waktu": jam, "status": st, "latlong": gps })});
-            alert("Berhasil!"); window.location.href = "dashboard.html";
+            document.getElementById("btn").disabled = true;
+
+            try {
+                await fetch(url, { 
+                    method: 'POST', 
+                    mode: 'no-cors', // Pakai no-cors agar tidak bentrok dengan Google
+                    body: JSON.stringify({ 
+                        "username": localStorage.getItem("namaUser"), 
+                        "waktu": jam, 
+                        "status": st, 
+                        "latlong": gps 
+                    })
+                });
+                alert("Berhasil Bosku! Data sudah mendarat di Sheets."); 
+                window.location.href = "dashboard.html";
+            } catch (e) {
+                alert("Gagal Kirim! Cek Sinyal.");
+                document.getElementById("btn").innerText = "KIRIM ABSEN";
+                document.getElementById("btn").disabled = false;
+            }
         }
     </script>
 </body>
