@@ -3,109 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi Digital - SD BHOANAWA 1</title>
+    <title>Scan & Selfie</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f4f7f6; text-align: center; }
-        .header { background: #d81b60; color: white; padding: 25px; font-weight: bold; font-size: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .container { padding: 20px; max-width: 500px; margin: auto; }
-        #reader { width: 100%; border-radius: 15px; overflow: hidden; background: white; border: 2px solid #ddd; }
-        #video-container { display: none; margin-top: 10px; }
-        video { width: 100%; border-radius: 15px; border: 5px solid #4caf50; background: #000; }
-        .btn-foto { background: #4caf50; color: white; padding: 18px 40px; border: none; border-radius: 50px; font-weight: bold; font-size: 18px; margin-top: 20px; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(76,175,80,0.3); }
-        .info-box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: left; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 6px solid #d81b60; }
-        .loading { display: none; color: #d81b60; font-weight: bold; margin-top: 10px; }
+        body { font-family: sans-serif; text-align: center; margin: 0; background: #f4f4f4; }
+        .header { background: #d81b60; color: white; padding: 20px; font-weight: bold; }
+        #reader { width: 100%; max-width: 400px; margin: auto; }
+        #webcam { width: 90%; border-radius: 15px; border: 4px solid #4caf50; display: none; margin: 10px auto; }
+        .info { background: white; margin: 15px; padding: 15px; border-radius: 10px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: none; }
+        .btn { background: #4caf50; color: white; padding: 15px 30px; border: none; border-radius: 50px; font-weight: bold; display: none; width: 80%; margin: 10px auto; }
     </style>
 </head>
 <body>
-
-    <div id="qr-section">
-        <div class="header">LANGKAH 1: SCAN QR SEKOLAH</div>
-        <div class="container">
-            <div id="reader"></div>
-            <p style="color: #666;">Arahkan kamera ke QR Code Sekolah</p>
-        </div>
+    <div id="step1">
+        <div class="header">LANGKAH 1: SCAN QR</div>
+        <div id="reader"></div>
     </div>
-
-    <div id="video-container">
-        <div class="header" style="background: #4caf50;">LANGKAH 2: FOTO SELFIE</div>
-        <div class="container">
-            <div class="info-box" id="info-guru"></div>
-            <video id="webcam" autoplay playsinline></video>
-            <div id="loader" class="loading">Sabar Bosku, Sedang Mengirim Data...</div>
-            <button id="btnKirim" class="btn-foto" onclick="ambilFoto()">AMBIL FOTO & KIRIM</button>
-        </div>
+    <div id="step2" style="display:none;">
+        <div class="header" style="background:#4caf50">LANGKAH 2: SELFIE</div>
+        <div class="info" id="infoBox"></div>
+        <video id="webcam" autoplay playsinline></video>
+        <button class="btn" id="btnKirim" onclick="kirim()">KIRIM ABSEN</button>
     </div>
-
     <script>
-        const html5QrCode = new Html5Qrcode("reader");
-        let koordinatGPS = "Mencari GPS...";
-        let globalStatus = "";
-        let globalJam = "";
+        const scanner = new Html5Qrcode("reader");
+        let gps = ""; let jam = ""; let status = "";
 
-        // Ambil Lokasi Otomatis
-        navigator.geolocation.getCurrentPosition((pos) => {
-            koordinatGPS = pos.coords.latitude + ", " + pos.coords.longitude;
-        }, (err) => { koordinatGPS = "GPS Dimatikan"; });
+        navigator.geolocation.getCurrentPosition(p => gps = p.coords.latitude + "," + p.coords.longitude);
 
-        // Mulai Scan QR
-        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
-            html5QrCode.stop().then(() => {
-                document.getElementById("qr-section").style.display = "none";
-                tampilkanSelfie();
-            });
+        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, () => {
+            scanner.stop();
+            document.getElementById("step1").style.display = "none";
+            tampilSelfie();
         });
 
-        function tampilkanSelfie() {
-            document.getElementById("video-container").style.display = "block";
-            const video = document.getElementById("webcam");
-            
-            const nama = localStorage.getItem("namaUser") || "Guru Tidak Dikenal";
-            const skrg = new Date();
-            globalJam = skrg.getHours().toString().padStart(2, '0') + ":" + skrg.getMinutes().toString().padStart(2, '0');
-            globalStatus = (skrg.getHours() < 7 || (skrg.getHours() === 7 && skrg.getMinutes() === 15)) ? "TEPAT WAKTU" : "TERLAMBAT";
+        function tampilSelfie() {
+            const step2 = document.getElementById("step2");
+            const info = document.getElementById("infoBox");
+            const v = document.getElementById("webcam");
+            step2.style.display = "block"; v.style.display = "block";
+            document.getElementById("btnKirim").style.display = "block"; info.style.display = "block";
 
-            document.getElementById("info-guru").innerHTML = `
-                <b>Nama:</b> ${nama}<br>
-                <b>Jam Scan:</b> ${globalJam}<br>
-                <b>Status:</b> ${globalStatus}
-            `;
+            const n = localStorage.getItem("namaUser");
+            const p = localStorage.getItem("piketUser") || "-";
+            const d = new Date();
+            jam = d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
+            status = (d.getHours() < 7 || (d.getHours() == 7 && d.getMinutes() <= 15)) ? "TEPAT WAKTU" : "TERLAMBAT";
 
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => video.srcObject = s);
+            info.innerHTML = `<b>Nama:</b> ${n}<br><b>Jam:</b> ${jam}<br><b>Status:</b> ${status}<br><b style="color:red">Piket:</b> ${p}`;
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => v.srcObject = s);
         }
 
-        async function ambilFoto() {
-            const btn = document.getElementById("btnKirim");
-            const loader = document.getElementById("loader");
-            const namaGuru = localStorage.getItem("namaUser");
-
-            // --- LINK APPS SCRIPT BOSKU (Pastikan ini Link Deployment Terbaru) ---
+        async function kirim() {
             const url = "https://script.google.com/macros/s/AKfycbwPSS-__v3hVLKS0W7tGK7IfRaS2zPkTXP9aQov2peSdbsmBo_SjXmU8B6zJctcD2Rrxw/exec";
-
-            btn.disabled = true;
-            btn.style.background = "#ccc";
-            loader.style.display = "block";
-
-            try {
-                await fetch(url, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({
-                        "username": namaGuru,
-                        "waktu": globalJam,
-                        "status": globalStatus,
-                        "latlong": koordinatGPS
-                    })
-                });
-                
-                alert("MANTAP BOSKU! Data " + namaGuru + " Berhasil Masuk.");
-                window.location.href = 'dashboard.html';
-            } catch (e) { 
-                alert("Gagal Kirim! Cek Sinyal Bosku.");
-                btn.disabled = false;
-                btn.style.background = "#4caf50";
-                loader.style.display = "none";
-            }
+            document.getElementById("btnKirim").innerText = "MENGIRIM...";
+            await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ "username": localStorage.getItem("namaUser"), "waktu": jam, "status": status, "latlong": gps }) });
+            alert("Berhasil Bosku!"); window.location.href = "dashboard.html";
         }
     </script>
 </body>
