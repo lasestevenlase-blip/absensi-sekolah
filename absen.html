@@ -1,64 +1,62 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scan & Selfie</title>
+    <title>Absen Selfie</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; margin: 0; background: #f4f4f4; }
+        body { font-family: sans-serif; text-align: center; background: #f0f0f0; margin: 0; }
         .header { background: #d81b60; color: white; padding: 20px; font-weight: bold; }
         #reader { width: 100%; max-width: 400px; margin: auto; }
         #webcam { width: 90%; border-radius: 15px; border: 4px solid #4caf50; display: none; margin: 10px auto; }
-        .info { background: white; margin: 15px; padding: 15px; border-radius: 10px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: none; }
-        .btn { background: #4caf50; color: white; padding: 15px 30px; border: none; border-radius: 50px; font-weight: bold; display: none; width: 80%; margin: 10px auto; }
+        .info { background: white; margin: 15px; padding: 15px; border-radius: 10px; text-align: left; display: none; }
+        .btn { background: #4caf50; color: white; padding: 15px; border: none; border-radius: 10px; width: 80%; font-weight: bold; display: none; margin: 10px auto; }
     </style>
 </head>
 <body>
-    <div id="step1">
-        <div class="header">LANGKAH 1: SCAN QR</div>
+    <div id="scandiv">
+        <div class="header">SCAN QR SEKOLAH</div>
         <div id="reader"></div>
     </div>
-    <div id="step2" style="display:none;">
-        <div class="header" style="background:#4caf50">LANGKAH 2: SELFIE</div>
-        <div class="info" id="infoBox"></div>
+    <div id="selfiediv">
+        <div class="header" style="background:#4caf50">AMBIL FOTO SELFIE</div>
+        <div class="info" id="box"></div>
         <video id="webcam" autoplay playsinline></video>
-        <button class="btn" id="btnKirim" onclick="kirim()">KIRIM ABSEN</button>
+        <button class="btn" id="btnK" onclick="kirim()">KIRIM DATA</button>
     </div>
+
     <script>
         const scanner = new Html5Qrcode("reader");
-        let gps = ""; let jam = ""; let status = "";
-
+        let gps = ""; let jm = ""; let st = "";
         navigator.geolocation.getCurrentPosition(p => gps = p.coords.latitude + "," + p.coords.longitude);
 
         scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, () => {
             scanner.stop();
-            document.getElementById("step1").style.display = "none";
-            tampilSelfie();
+            document.getElementById("scandiv").style.display = "none";
+            document.getElementById("selfiediv").style.display = "block";
+            tampil();
         });
 
-        function tampilSelfie() {
-            const step2 = document.getElementById("step2");
-            const info = document.getElementById("infoBox");
-            const v = document.getElementById("webcam");
-            step2.style.display = "block"; v.style.display = "block";
-            document.getElementById("btnKirim").style.display = "block"; info.style.display = "block";
-
+        function tampil() {
             const n = localStorage.getItem("namaUser");
             const p = localStorage.getItem("piketUser") || "-";
             const d = new Date();
-            jam = d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
-            status = (d.getHours() < 7 || (d.getHours() == 7 && d.getMinutes() <= 15)) ? "TEPAT WAKTU" : "TERLAMBAT";
-
-            info.innerHTML = `<b>Nama:</b> ${n}<br><b>Jam:</b> ${jam}<br><b>Status:</b> ${status}<br><b style="color:red">Piket:</b> ${p}`;
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => v.srcObject = s);
+            jm = d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
+            st = (d.getHours() < 7 || (d.getHours() == 7 && d.getMinutes() <= 15)) ? "TEPAT WAKTU" : "TERLAMBAT";
+            
+            document.getElementById("box").style.display = "block";
+            document.getElementById("webcam").style.display = "block";
+            document.getElementById("btnK").style.display = "block";
+            document.getElementById("box").innerHTML = `<b>Nama:</b> ${n}<br><b>Status:</b> ${st}<br><b>Piket:</b> ${p}`;
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => document.getElementById("webcam").srcObject = s);
         }
 
         async function kirim() {
-            const url = "https://script.google.com/macros/s/AKfycbwPSS-__v3hVLKS0W7tGK7IfRaS2zPkTXP9aQov2peSdbsmBo_SjXmU8B6zJctcD2Rrxw/exec";
-            document.getElementById("btnKirim").innerText = "MENGIRIM...";
-            await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ "username": localStorage.getItem("namaUser"), "waktu": jam, "status": status, "latlong": gps }) });
-            alert("Berhasil Bosku!"); window.location.href = "dashboard.html";
+            // --- GANTI DENGAN URL APPS SCRIPT BARU BOSKU ---
+            const url = "URL_BARU_DARI_DEPLOY_TADI"; 
+            document.getElementById("btnK").innerText = "MENGIRIM...";
+            await fetch(url, { method: 'POST', body: JSON.stringify({ "username": localStorage.getItem("namaUser"), "waktu": jm, "status": st, "latlong": gps }) });
+            alert("Absen Berhasil!"); window.location.href = "dashboard.html";
         }
     </script>
 </body>
